@@ -115,12 +115,17 @@ c.
 
 Download the ``Australia - 500 Records'' data. Use it to answer the following questions.
 
+```{r}
+aus_df <- read.csv("au-500.csv")
+```
+
 a. What percentage of the websites are .com’s (as opposed to .net, .com.au, etc)?
 
 ```{r}
-
+#grep("\\.com\\.au", aus_df$web)
+table(grepl("\\.com\\.au", aus_df$web))
 ```
-
+Zero percent of the websites in the data set end in .com. All of the websites end in .com.au, which can be seen just taking a look at the data set but this gives us concrete proof that this is the case and our eyes aren't tricking us.
 
 b. What is the most common domain name amongst the email addresses?
 
