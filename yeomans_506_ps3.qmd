@@ -1,0 +1,165 @@
+---
+title: "PS3 506 Yeomans"
+author: "Sydney Yeomans"
+format:
+  html:
+    embed-resources: true
+editor: visual
+---
+
+## Problem 1
+
+For the “nice tables”, use a function such as kable from knitr, or the stargazer package (or find another approach) to generate HTML/LaTeX tables for inclusion. The results should be clearly labeled, rounded appropriately, and easily readable.
+
+a. 
+
+```{r}
+
+```
+
+
+b.
+
+```{r}
+
+```
+
+
+c.
+
+```{r}
+
+```
+
+
+
+d.
+
+```{r}
+
+```
+
+
+
+## Problem 2
+
+Use the “sakila” database discussed in class. For each of the following questions, solve them in two ways: First, use SQL query or queries to extract the appropriate table(s), then use regular R operations on those data frames to answer the question. Second, use a single SQL query to answer the question. Compare each approach using microbenchmark.
+
+SQL version
+
+a.
+
+```{r}
+
+```
+
+b.
+
+```{r}
+
+```
+
+c.
+
+```{r}
+
+```
+
+
+Base R version
+
+a.
+
+```{r}
+
+```
+
+b.
+
+```{r}
+
+```
+
+c.
+
+```{r}
+
+```
+
+
+Single SQL querey
+
+a.
+
+```{r}
+
+```
+
+
+b.
+
+```{r}
+
+```
+
+
+c.
+
+```{r}
+
+```
+
+
+
+## Problem 3
+
+Download the ``Australia - 500 Records'' data. Use it to answer the following questions.
+
+a. What percentage of the websites are .com’s (as opposed to .net, .com.au, etc)?
+
+```{r}
+
+```
+
+
+b. What is the most common domain name amongst the email addresses?
+
+```{r}
+
+```
+
+
+c. What proportion of company names contain a non-alphabetic character, excluding commas and whitespace. (E.g. “Jane Doe, LLC” would not contain an eligible non-alphabetic character; “Plumber 247” would.) What about if you also exclude ampersands (“&”)?
+
+```{r}
+
+```
+
+
+d. Make all phone numbers written like cell phones. Show it works by printing the first 10 phone numbers of each column.
+
+```{r}
+
+```
+
+
+e. Produce a histogram of the log of the apartment numbers for all addresses. (You may assume any number at the end of the an address is an apartment number.)
+
+```{r}
+
+```
+
+
+f. Do you think the apartment numbers would pass as real data? Based on Benford's law
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
