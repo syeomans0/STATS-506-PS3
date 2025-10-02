@@ -25,7 +25,7 @@ aux_df <- read_xpt("AUX_I.xpt")
 dim(aux_df)
 demo_df <- read_xpt("DEMO_I.xpt")
 dim(demo_df)
-#they have to match based on the variable SEQN which is Respondent sequence number
+#they have to match based on the variable SEQN - Respondent sequence number
 merged_df <- merge(aux_df, demo_df, by = "SEQN")
 dim(merged_df)
 ```
@@ -36,9 +36,31 @@ Since this is a SAS file I looked up how to read it into R and found this source
 b. Clean up each - ensure all missing values are actually NA (rather than 999 or something), and if it’s categorical, convert it to factor with informative levels. Variables: Gender, Citizenship status, Number of children 5 years or younger in the household, and Annual household income - There’s also an issue with the ordering of the categories here; take a look, identify the issue, and implement a solution.
 
 ```{r}
+#gender = RIAGENDR
+#citizenship = DMDCITZN
+#number of children = DMDHHSIZ -- total household size
+#annual household income = INDINDFM
+
+#start with gender: 1 = male, 2 = female, if any other number set as NA
+merged_df$RIAGENDR[merged_df$RIAGENDR != 1 & merged_df$RIAGENDR != 2] <- NA
+merged_df$RIAGENDR <- factor(merged_df$RIAGENDR, levels = c(1, 2), 
+                             labels = c("Male", "Female"))
+
+#citizenship: 1= citizen, 2= non-citizen, set everything else to NA
+merged_df$DMDCITZN[merged_df$DMDCITZN != 1 & merged_df$DMDCITZN != 2] <- NA
+merged_df$DMDCITZN <- factor(merged_df$DMDCITZN, levels = c(1, 2), 
+                             labels = c("Citizen", "Non-Citizen"))
+
+#Number of children 5 years or younger in the household
+#given total household size
+
+
+#annual income: 
+
 
 ```
 
+How to make factors: <https://www.geeksforgeeks.org/r-language/r-factors/>.
 
 c. The Tympanometric width measure is looks approximately like a Poisson distribution. Fit four Poisson regression models predicting a respondent’s Tympanometric width in each ear. Each model is defined below, for a specific ear and a specific set of covariates.
 
