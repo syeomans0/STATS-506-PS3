@@ -22,6 +22,8 @@ demo_df <- read_xpt("DEMO_I.xpt")
 #dim(merged_df)
 ```
 
+Since this is a SAS file I looked up how to read it into R and found this source <https://www.rdocumentation.org/packages/haven/versions/2.0.0/topics/read_xpt>. I then looked up if this is in base R and it is not so I found what package it comes from. 
+
 
 b. Clean up each - ensure all missing values are actually NA (rather than 999 or something), and if it’s categorical, convert it to factor with informative levels. Variables: Gender, Citizenship status, Number of children 5 years or younger in the household, and Annual household income - There’s also an issue with the ordering of the categories here; take a look, identify the issue, and implement a solution.
 
@@ -151,23 +153,45 @@ Zero percent of the websites in the data set end in .com. All of the websites en
 b. What is the most common domain name amongst the email addresses?
 
 ```{r}
-
+domains <- sapply(strsplit(aus_df$email, "@"), "[[", 2)
+table(domains)
 ```
 
+The most common domain name in the email addresses is Hotmail with 114 occurrences, followed by Gmail with 102 and Yahoo with 84. The code I used for this was taken from <https://stackoverflow.com/questions/31235165/sapply-with-strsplit-in-r> where they are keeping the part after a certain symbol.
 
 c. What proportion of company names contain a non-alphabetic character, excluding commas and whitespace. (E.g. “Jane Doe, LLC” would not contain an eligible non-alphabetic character; “Plumber 247” would.) What about if you also exclude ampersands (“&”)?
 
 ```{r}
-
+clean_company_name <- gsub(" ", "", aus_df$company_name, fixed = TRUE)
+no_comma <- gsub(",", "", clean_company_name, fixed = TRUE)
+table(grepl("[^A-Za-z]", no_comma))
+(45 / 500) * 100
 ```
+
+Excluding commas and whitespace, we see that $9%$ of the company names have a non-alphabetic character.
+
+```{r}
+no_ampersand <- gsub("&", "", no_comma, fixed = TRUE)
+table(grepl("[^A-Za-z]", no_ampersand))
+(4 / 500) * 100
+```
+
+Adding in the character ``&'' we then see the proportion drops down to $0.8%$, which is really small. 
 
 
 d. Make all phone numbers written like cell phones. Show it works by printing the first 10 phone numbers of each column.
 
 ```{r}
+#my idea is to strip the landline one of the - then place them 
+#such that they match the pattern of the cell phoen
+landline <- gsub("-", "", aus_df$phone1, fixed = TRUE)
+aus_df$phone1 <- gsub("(\\d{4})(\\d{3})(\\d{3})$","\\1-\\2-\\3", landline)
+head(aus_df$phone1, 10)
+head(aus_df$phone2, 10)
 
 ```
 
+The site I used to come up with how to place the hypens in the needed spots was here: <https://stackoverflow.com/questions/41655171/what-is-an-elegant-way-to-add-dashes-in-number-strings>. Now the landline numbers match that of the cellphone. 
 
 e. Produce a histogram of the log of the apartment numbers for all addresses. (You may assume any number at the end of the an address is an apartment number.)
 
