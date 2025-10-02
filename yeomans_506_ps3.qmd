@@ -11,18 +11,26 @@ editor: visual
 
 For the “nice tables”, use a function such as kable from knitr, or the stargazer package (or find another approach) to generate HTML/LaTeX tables for inclusion. The results should be clearly labeled, rounded appropriately, and easily readable.
 
+```{r}
+install.packages("stargazer")
+library(stargazer)
+```
+
 a. Merge the two files to create a single data.frame. Keep only records which matched. Print out the dimensions of the merged data.frame.
 
 ```{r}
-install.packages("haven")
+#install.packages("haven")
 library(haven)
 aux_df <- read_xpt("AUX_I.xpt")
+dim(aux_df)
 demo_df <- read_xpt("DEMO_I.xpt")
-#megered_df <-
-#dim(merged_df)
+dim(demo_df)
+#they have to match based on the variable SEQN which is Respondent sequence number
+merged_df <- merge(aux_df, demo_df, by = "SEQN")
+dim(merged_df)
 ```
 
-Since this is a SAS file I looked up how to read it into R and found this source <https://www.rdocumentation.org/packages/haven/versions/2.0.0/topics/read_xpt>. I then looked up if this is in base R and it is not so I found what package it comes from. 
+Since this is a SAS file I looked up how to read it into R and found this source <https://www.rdocumentation.org/packages/haven/versions/2.0.0/topics/read_xpt>. I then looked up if this is in base R and it is not so I found what package it comes from. I looked up how to merge data set and used this site to help me merge the two <https://www.datacamp.com/doc/r/merging>. 
 
 
 b. Clean up each - ensure all missing values are actually NA (rather than 999 or something), and if it’s categorical, convert it to factor with informative levels. Variables: Gender, Citizenship status, Number of children 5 years or younger in the household, and Annual household income - There’s also an issue with the ordering of the categories here; take a look, identify the issue, and implement a solution.
