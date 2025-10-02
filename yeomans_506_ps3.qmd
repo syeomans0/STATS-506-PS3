@@ -139,12 +139,14 @@ c.
 Download the ``Australia - 500 Records'' data. Use it to answer the following questions.
 
 ```{r}
+#| echo: true
 aus_df <- read.csv("au-500.csv")
 ```
 
 a. What percentage of the websites are .com’s (as opposed to .net, .com.au, etc)?
 
 ```{r}
+#| echo: true
 #grep("\\.com\\.au", aus_df$web)
 table(grepl("\\.com\\.au", aus_df$web))
 ```
@@ -153,6 +155,7 @@ Zero percent of the websites in the data set end in .com. All of the websites en
 b. What is the most common domain name amongst the email addresses?
 
 ```{r}
+#| echo: true
 domains <- sapply(strsplit(aus_df$email, "@"), "[[", 2)
 table(domains)
 ```
@@ -162,6 +165,7 @@ The most common domain name in the email addresses is Hotmail with 114 occurrenc
 c. What proportion of company names contain a non-alphabetic character, excluding commas and whitespace. (E.g. “Jane Doe, LLC” would not contain an eligible non-alphabetic character; “Plumber 247” would.) What about if you also exclude ampersands (“&”)?
 
 ```{r}
+#| echo: true
 clean_company_name <- gsub(" ", "", aus_df$company_name, fixed = TRUE)
 no_comma <- gsub(",", "", clean_company_name, fixed = TRUE)
 table(grepl("[^A-Za-z]", no_comma))
@@ -171,6 +175,7 @@ table(grepl("[^A-Za-z]", no_comma))
 Excluding commas and whitespace, we see that $9%$ of the company names have a non-alphabetic character.
 
 ```{r}
+#| echo: true
 no_ampersand <- gsub("&", "", no_comma, fixed = TRUE)
 table(grepl("[^A-Za-z]", no_ampersand))
 (4 / 500) * 100
@@ -182,6 +187,7 @@ Adding in the character ``&'' we then see the proportion drops down to $0.8%$, w
 d. Make all phone numbers written like cell phones. Show it works by printing the first 10 phone numbers of each column.
 
 ```{r}
+#| echo: true
 #my idea is to strip the landline one of the - then place them 
 #such that they match the pattern of the cell phoen
 landline <- gsub("-", "", aus_df$phone1, fixed = TRUE)
@@ -196,15 +202,20 @@ The site I used to come up with how to place the hypens in the needed spots was 
 e. Produce a histogram of the log of the apartment numbers for all addresses. (You may assume any number at the end of the an address is an apartment number.)
 
 ```{r}
-
+#| echo: true
+#get the number after the '#' in the addresses
+aus_df <- aus_df[grepl("#", aus_df$address), ]
+apt_split <- apt_split <- strsplit(aus_df$address, "#")
+apt_num <- sapply(apt_split,  "[[", 2)
+apt_num <- as.numeric(apt_num)
+head(apt_num)
+hist(log(apt_num))
 ```
-
+The numbers seen from head are the first apartment numbers that show up in the CSV. I used the same apply function as part b, which comes from that same site from earlier. 
 
 f. Do you think the apartment numbers would pass as real data? Based on Benford's law
 
-```{r}
-
-```
+Benford's law is an observation that in many real-life sets of numerical data, the leading digit is likely to be small, meaning our histogram should show lots of values that fall into the smaller number categories compared to the larger values. From our histogram in the last part of this problem, we can see this is not the case. Our histogram of apartment numbers we see that log 0 to 1 has one of the lowest counts with a frequency of 5 then it goes up and down as we go further up on the x-axis, with no set pattern. Therefore, the apartment numbers do not pass as real data, which matches the fact that this data was made up.
 
 
 
