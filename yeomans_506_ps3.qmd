@@ -19,6 +19,7 @@ library(stargazer)
 a. Merge the two files to create a single data.frame. Keep only records which matched. Print out the dimensions of the merged data.frame.
 
 ```{r}
+#| echo: true
 #install.packages("haven")
 library(haven)
 aux_df <- read_xpt("AUX_I.xpt")
@@ -38,8 +39,8 @@ b. Clean up each - ensure all missing values are actually NA (rather than 999 or
 ```{r}
 #gender = RIAGENDR
 #citizenship = DMDCITZN
-#number of children = DMDHHSIZ -- total household size
-#annual household income = INDINDFM
+#number of children aged 5 years or younger in the household = DMDHHSZA 
+#annual household income = INDHHIN2
 
 #start with gender: 1 = male, 2 = female, if any other number set as NA
 merged_df$RIAGENDR[merged_df$RIAGENDR != 1 & merged_df$RIAGENDR != 2] <- NA
@@ -51,11 +52,21 @@ merged_df$DMDCITZN[merged_df$DMDCITZN != 1 & merged_df$DMDCITZN != 2] <- NA
 merged_df$DMDCITZN <- factor(merged_df$DMDCITZN, levels = c(1, 2), 
                              labels = c("Citizen", "Non-Citizen"))
 
-#Number of children 5 years or younger in the household
-#given total household size
+#Number of children 5 years or younger in the household: 0 = 0, 1=1, 2=2, 
+#3 = 3 or more, . = missing
+merged_df$DMDHHSZA[merged_df$DMDHHSZA == "."] <- NA
+merged_df$DMDHHSZA <- factor(merged_df$DMDHHSZA, levels = c(0, 1,2, 3), 
+                             labels = c("0", "1", "2", "3 or more"))
 
 
-#annual income: 
+#annual income: 15 levels - 77 = refused, 99 = don't know, . = missing
+merged_df$INDHHIN2[merged_df$INDHHIN2 == "."] <- NA
+merged_df$INDHHIN2[merged_df$INDHHIN2 == "77"] <- NA
+merged_df$INDHHIN2[merged_df$INDHHIN2 == "99"] <- NA
+
+#correcting the order - messed up at level 12 and on
+income_levels <- c("$0 to $4,999", "$5,000 to $9,999", "$10,000 to $14,999", "$15,000 to $19,999", "$20,000 to $24,999", "$25,000 to $34,999", "$35,000 to $44,999", "$45,000 to $54,999", "$55,000 to $64,999", "$65,000 to $74,999", "$75,000 to $99,999", "$100,000 and over")
+
 
 
 ```
@@ -65,12 +76,65 @@ How to make factors: <https://www.geeksforgeeks.org/r-language/r-factors/>.
 c. The Tympanometric width measure is looks approximately like a Poisson distribution. Fit four Poisson regression models predicting a respondent’s Tympanometric width in each ear. Each model is defined below, for a specific ear and a specific set of covariates.
 
 ```{r}
-
+#first model: 1R - Right ear: gender
+#Tympanometric width, right ear: AUXTWIDR
+poisson_model_1 < - glm(AUXTWIDR ~ RIAGENDR, merged_df, 
+                        family = poisson(link = "log"))
+summary(poisson_model_1)
 ```
 
 
+```{r}
+#second model: 2R - Right ear: gender, citizenship status (as categorical), 
+#number of children (as continuous), annual household income (as continuous)
+poisson_model_2 < - glm(AUXTWIDR ~ RIAGENDR + DMDCITZN + DMDHHSZA + INDHHIN2, 
+                        merged_df, family = poisson(link = "log"))
+summary(poisson_model_2)
+```
 
-d.
+
+```{r}
+#third model: 1L - Left ear: gender
+#Tympanometric width, left ear : AUXTWIDL
+poisson_model_3 < - glm(AUXTWIDL ~ RIAGENDR, merged_df, 
+                        family = poisson(link = "log"))
+summary(poisson_model_3)
+```
+
+
+```{r}
+#fourth model: 2L - Left ear: gender, citizenship status (as categorical), 
+#number of children (as continuous), annual household income (as continuous)
+poisson_model_4 < - glm(AUXTWIDL ~ RIAGENDR + DMDCITZN + DMDHHSZA + INDHHIN2, 
+                        merged_df, family = poisson(link = "log"))
+summary(poisson_model_4)
+```
+
+<https://www.dataquest.io/blog/tutorial-poisson-regression-in-r/>
+
+Produce a table presenting the estimated incidence risk ratios for the coefficients in each model, along with the sample size for the model, the pseudo-$R^2$, and AIC values.
+
+\vspace{.5cm}
+\begin{table}[h!]
+\centering
+\caption{Table looking at the 4 model results}
+\label{tab:table506} 
+\begin{tabular}{lllll}
+\hline
+\textbf{Model} & \textbf{Estimated Incidence Risk Ratio} & \textbf{Sample Size} & \textbf{$R^2$} & \textbf{AIC value}\\
+\hline
+1R & 2 & 3 & 4 & 5 \\
+2R & 2 & 3 & 4 & 5\\
+1L & 2 & 3 & 4 & 5 \\
+2L & 2 & 3 & 4 & 5 \\
+\hline
+\end{tabular}
+\end{table} 
+\vspace{.5cm}
+
+
+
+d. From model 2L, provide evidence whether there is a difference between males and females in terms of their incidence risk ratio. Test whether the predicted value of Tympanometric width measure of the left ear differs between men and women. Include the results of the each test and their interpretation.
 
 ```{r}
 
