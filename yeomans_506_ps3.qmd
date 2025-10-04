@@ -11,11 +11,6 @@ editor: visual
 
 For the “nice tables”, use a function such as kable from knitr, or the stargazer package (or find another approach) to generate HTML/LaTeX tables for inclusion. The results should be clearly labeled, rounded appropriately, and easily readable.
 
-```{r}
-install.packages("stargazer")
-library(stargazer)
-```
-
 a. Merge the two files to create a single data.frame. Keep only records which matched. Print out the dimensions of the merged data.frame.
 
 ```{r}
@@ -86,8 +81,6 @@ merged_df$INDHHIN2 <- factor(merged_df$INDHHIN2, levels = c(1:10, 14, 15),
 
 #make aure their structures are what we expect
 str(merged_df$RIAGENDR)
-
-
 ```
 
 How to make factors: <https://www.geeksforgeeks.org/r-language/r-factors/>.
@@ -97,7 +90,6 @@ c. The Tympanometric width measure is looks approximately like a Poisson distrib
 ```{r}
 #install.packages("pscl")
 library(pscl)
-
 ```
 
 I used this site <https://stats.stackexchange.com/questions/8511/how-to-calculate-pseudo-r2-from-rs-logistic-regression> to find how to get the psudo $R^2$. It was used for the logistic but I looked and found that it is fine to use this in the case of poisson regression as well. Now that we have this library added we can get all the values we want for the tables.
@@ -164,54 +156,36 @@ exp(coef(poisson_model_4))
 
 Produce a table presenting the estimated incidence risk ratios for the coefficients in each model, along with the sample size for the model, the pseudo-$R^2$, and AIC values.
 
-\vspace{.5cm}
-\begin{table}[h!]
-\centering
-\caption{Model summary statistics}
-\label{tab:stats}
-\begin{tabular}{lccc}
-\hline
-\textbf{Model} & \textbf{Sample Size ($N = df_{null} + 1$)} & \textbf{Pseudo-$R^2$} & \textbf{AIC} \\
-\hline
-1R & 4149 & 7.774521e-05 & 96618 \\
-2R & 3705 & 7.580697e-03  & 84650 \\
-1L & 4103 & 1.481932e-04 & 98685 \\
-2L & 3665 & 5.274216e-03  & 86397 \\
-\hline
-\end{tabular}
-\end{table}
-\vspace{.5cm}
+```{r}
+model_summary <- data.frame(
+  Model = c("1R","2R","1L","2L"),
+  Sample_Size = c(4149, 3705, 4103, 3665),
+  Pseudo_R2 = c(7.774521e-05, 7.580697e-03, 1.481932e-04, 5.274216e-03),
+  AIC = c(96618, 84650, 98685, 86397)
+)
 
-\vspace{.5cm}
-\begin{table}[h!]
-\centering
-\caption{Estimated incidence risk ratios (IRRs) for each model rounded to 3 decimals}
-\label{tab:coeffs}
-\begin{tabular}{lcccc}
-\hline
-\textbf{Term} & \textbf{1R} & \textbf{2R} & \textbf{1L} & \textbf{2L} \\
-\hline
-Intercept & 84.317 & 83.557 & 84.758 & 85.121 \\
-Gender - Female & 1.009 & 1.015 & 1.013 & 1.019 \\
-Citizenship - Non-citizen & -- & 1.044 & -- & 1.018 \\
-DMDHHSZA1 & -- & 0.997 & -- & 0.989 \\
-DMDHHSZA2 & -- & 0.970 & -- & 0.969 \\
-DMDHHSZA3 or more & -- & 1.056 & -- & 0.922 \\
-INDHHIN2.L & -- & 0.954 & -- & 0.931 \\
-INDHHIN2.Q & -- & 0.922 & -- & 0.984 \\
-INDHHIN2.C & -- & 0.999 & -- & 1.024 \\
-INDHHIN2$^4$ & -- & 1.022 & -- & 0.977 \\
-INDHHIN2$^5$ & -- & 0.996 & -- & 0.992 \\
-INDHHIN2$^6$ & -- & 1.054 & -- & 1.062 \\
-INDHHIN2$^7$ & -- & 0.996 & -- & 0.977 \\
-INDHHIN2$^8$ & -- & 1.030 & -- & 0.994 \\
-INDHHIN2$^9$ & -- & 1.035 & -- & 1.007 \\
-INDHHIN2$^{10}$ & -- & 0.979 & -- & 0.970 \\
-INDHHIN2$^{11}$ & -- & 1.006 & -- & 0.950 \\
-\hline
-\end{tabular}
-\end{table} 
-\vspace{.5cm}
+kable(model_summary, caption = "Model summary statistics", digits = 6)
+
+IRR_table <- data.frame(
+  Term = c("Intercept", "Gender - Female", "Citizenship - Non-citizen",
+           "DMDHHSZA1", "DMDHHSZA2", "DMDHHSZA3 or more",
+           "INDHHIN2.L", "INDHHIN2.Q", "INDHHIN2.C", "INDHHIN2^4",
+           "INDHHIN2^5", "INDHHIN2^6", "INDHHIN2^7", "INDHHIN2^8",
+           "INDHHIN2^9", "INDHHIN2^10", "INDHHIN2^11"),
+   `1R` = c(84.317, 1.009, NA, NA, NA, NA,
+           NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+  `2R` = c(83.557, 1.015, 1.044, 0.997, 0.970, 1.056,
+           0.954, 0.922, 0.999, 1.022, 0.996, 1.054, 0.996, 1.030, 1.035, 0.979, 1.006),
+  `1L` = c(84.758, 1.013, NA, NA, NA, NA,
+           NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+  `2L` = c(85.121, 1.019, 1.018, 0.989, 0.969, 0.922,
+           0.931, 0.984, 1.024, 0.977, 0.992, 1.062, 0.977, 0.994, 1.007, 0.970, 0.950),
+  check.names = FALSE
+)
+kable(IRR_table, caption = "Estimated incidence risk ratios (IRR) for each model rounded to 3 decimals", digits = 3)
+
+```
+I tried to make Latex tables with latex code bc I thought quarto docs could handle it but I guess that's only for PDFs :(
 
 
 
