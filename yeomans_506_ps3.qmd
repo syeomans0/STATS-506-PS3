@@ -32,6 +32,7 @@ Since this is a SAS file I looked up how to read it into R and found this source
 b. Clean up each - ensure all missing values are actually NA (rather than 999 or something), and if it’s categorical, convert it to factor with informative levels. Variables: Gender, Citizenship status, Number of children 5 years or younger in the household, and Annual household income - There’s also an issue with the ordering of the categories here; take a look, identify the issue, and implement a solution.
 
 ```{r}
+#| echo: true
 #gender = RIAGENDR
 #citizenship = DMDCITZN
 #number of children aged 5 years or younger in the household = DMDHHSZA 
@@ -88,6 +89,7 @@ How to make factors: <https://www.geeksforgeeks.org/r-language/r-factors/>.
 c. The Tympanometric width measure is looks approximately like a Poisson distribution. Fit four Poisson regression models predicting a respondent’s Tympanometric width in each ear. Each model is defined below, for a specific ear and a specific set of covariates.
 
 ```{r}
+#| echo: true
 #install.packages("pscl")
 library(pscl)
 ```
@@ -96,6 +98,7 @@ I used this site <https://stats.stackexchange.com/questions/8511/how-to-calculat
 
 
 ```{r}
+#| echo: true
 #first model: 1R - Right ear: gender
 #Tympanometric width, right ear: AUXTWIDR
 poisson_model_1 <- glm(AUXTWIDR ~ RIAGENDR, merged_df, 
@@ -104,6 +107,7 @@ summary(poisson_model_1)
 ```
 
 ```{r}
+#| echo: true
 #doesn't show psudo r^2 use pR2 from pscl package
 print(pR2(poisson_model_1))
 #need to convert coefficients to exponents to mitigate log
@@ -112,6 +116,7 @@ print(exp(coef(poisson_model_1)))
 
 
 ```{r}
+#| echo: true
 #second model: 2R - Right ear: gender, citizenship status (as categorical), 
 #number of children (as continuous), annual household income (as continuous)
 poisson_model_2 <- glm(AUXTWIDR ~ RIAGENDR + DMDCITZN + DMDHHSZA + INDHHIN2, 
@@ -120,12 +125,14 @@ summary(poisson_model_2)
 ```
 
 ```{r}
+#| echo: true
 pR2(poisson_model_2)
 exp(coef(poisson_model_2))
 ```
 
 
 ```{r}
+#| echo: true
 #third model: 1L - Left ear: gender
 #Tympanometric width, left ear : AUXTWIDL
 poisson_model_3 <- glm(AUXTWIDL ~ RIAGENDR, merged_df, 
@@ -134,12 +141,14 @@ summary(poisson_model_3)
 ```
 
 ```{r}
+#| echo: true
 pR2(poisson_model_3)
 exp(coef(poisson_model_3))
 ```
 
 
 ```{r}
+#| echo: true
 #fourth model: 2L - Left ear: gender, citizenship status (as categorical), 
 #number of children (as continuous), annual household income (as continuous)
 poisson_model_4 <- glm(AUXTWIDL ~ RIAGENDR + DMDCITZN + DMDHHSZA + INDHHIN2, 
@@ -148,6 +157,7 @@ summary(poisson_model_4)
 ```
 
 ```{r}
+#| echo: true
 pR2(poisson_model_4)
 exp(coef(poisson_model_4))
 ```
@@ -157,6 +167,7 @@ exp(coef(poisson_model_4))
 Produce a table presenting the estimated incidence risk ratios for the coefficients in each model, along with the sample size for the model, the pseudo-$R^2$, and AIC values.
 
 ```{r}
+#| echo: true
 model_summary <- data.frame(
   Model = c("1R","2R","1L","2L"),
   Sample_Size = c(4149, 3705, 4103, 3665),
@@ -192,6 +203,7 @@ I tried to make Latex tables with latex code bc I thought quarto docs could hand
 d. From model 2L, provide evidence whether there is a difference between males and females in terms of their incidence risk ratio. Test whether the predicted value of Tympanometric width measure of the left ear differs between men and women. Include the results of the each test and their interpretation.
 
 ```{r}
+#| echo: true
 summary(poisson_model_4)
 ```
 According to model 2L, being female is associated with a significantly higher predicted Tympanometric width in the left ear. The estimated incidence risk ratio is 1.019, meaning females are predicted to have a 1.9 percent higher value than males, holding all of the other co-variates constant. This difference is statistically significant (p < 0.001).
@@ -208,6 +220,7 @@ library(RSQLite)
 #install.packages("DBI")
 library(DBI)
 sakila <-  dbConnect(RSQLite::SQLite(), "sakila_master.db")
+library(microbenchmark)
 
 ```
 
@@ -216,45 +229,120 @@ SQL version:
 a. For each store, how many customers does that store have, and what percentage of customers of that store are active in the system?
 
 ```{r}
-#dbListTables(sakila)
+dbListTables(sakila)
 
+#set up fucntion so don't have to write get query each time
 gg <- function(query) {
   dbGetQuery(sakila, query)
 }
+```
 
+```{r}
+#variables we want
+# #customers at each store
+# #active customers
+#looks like customer table has all info we need
+#variable names: store_id (num), customer_id (num), active (char)
+sql_a <- gg("SELECT store_id, 
+                    customer_id, 
+                    active
+            FROM customer")
+
+stores <- unique(sql_a$store_id) #only two unique stores?
+
+#convert active to numeric
+sql_a$active <- as.numeric(sql_a$active)
+
+#looks like 14 are inactive of 599 total not per store (just from eye balling)
+#go through stores and get counts
+table(sql_a$store_id)
+table(sql_a$active)
+
+#15 total inactive but need the breakdown for the two stores
+store1_total <- 0
+store1_active <- 0
+store2_total <- 0
+store2_active <- 0
+
+#go through the 599 rows
+for (i in 1:nrow(sql_a)) {
+  if (sql_a$store_id[i] == 1) {
+    store1_total <- store1_total + 1
+    if (sql_a$active[i] == 1) {
+      store1_active <- store1_active + 1
+    }
+  }
+  
+  if (sql_a$store_id[i] == 2) {
+    store2_total <- store2_total + 1
+    if (sql_a$active[i] == 1) {
+      store2_active <- store2_active + 1
+    }
+  }
+}
+
+store1_percent <- 100 * store1_active / store1_total
+store2_percent <- 100 * store2_active / store2_total
+
+
+cat("Percent active at store 1:", store1_percent, "%", "\n")
+cat("Percent active at store 2:", store2_percent, "%", "\n")
 
 ```
+
+
 
 b. Generate a table identifying the names and country of each staff member.
 
 ```{r}
+#staff is not directly connected to country but address id gets us to city
+#city table gets us to country
+sql_b_staff <- gg("SELECT staff_id,
+                          first_name,
+                          last_name,
+                          address_id
+                   FROM staff")
 
+sql_b_address <- gg("SELECT address_id,
+                            city_id
+                     FROM address")
+sql_b_city <- gg("SELECT city_id, 
+                         country_id 
+                  FROM city")
+  
+sql_b_country <- gg("SELECT country_id, 
+                            country 
+                     FROM country")
+
+check <- gg("SELECT first_name, last_name FROM staff")
+check
+#ONLY TWO STAFF
+#now hoave to merge everything like we did in problem 1
+#merge staff and address on common variable
+staff_address <- merge(sql_b_staff, sql_b_address, by = "address_id")
+
+#merge city and address on common
+address_city <- merge(staff_address, sql_b_city, by = "city_id")
+
+#merge city and country with common
+city_country <- merge(staff_city, sql_b_country, by = "country_id")
+
+#get the names
+city_country$staff_name <- paste(city_country$first_name, city_country$last_name)
+
+#only want staff ID, their name and their country
+final_df <- city_country[, c("staff_id", "staff_name", "country")]
+
+final_df
 ```
+
+
 
 c. Identify the name(s) of the film(s) which was/were rented for the highest dollar value. (Assume all costs are in USD regardless of country.) (Hint: You can merge a table more than once.)
 
 ```{r}
-
-```
-
-
-Base R and data frame version:
-
-a.
-
-```{r}
-
-```
-
-b.
-
-```{r}
-
-```
-
-c.
-
-```{r}
+sql_c <- gg("
+            ")
 
 ```
 
@@ -264,6 +352,8 @@ Single SQL querey:
 a.
 
 ```{r}
+single_a <- gg("
+               ")
 
 ```
 
@@ -271,6 +361,8 @@ a.
 b.
 
 ```{r}
+single_b <- gg("
+               ")
 
 ```
 
@@ -278,8 +370,38 @@ b.
 c.
 
 ```{r}
+single_c <- gg("
+               ")
 
 ```
+
+
+
+Comparisons:
+
+```{r}
+#microbenchmark for each of the different versions and questions
+#part a
+
+
+```
+
+
+
+```{r}
+#part b
+
+
+```
+
+
+
+```{r}
+#part c
+
+
+```
+
 
 
 
