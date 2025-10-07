@@ -281,8 +281,8 @@ for (i in 1:nrow(sql_a)) {
   }
 }
 
-store1_percent <- 100 * store1_active / store1_total
-store2_percent <- 100 * store2_active / store2_total
+store1_percent <- 100 * (store1_active / store1_total)
+store2_percent <- 100 * (store2_active / store2_total)
 
 
 cat("Percent active at store 1:", store1_percent, "%", "\n")
@@ -341,9 +341,14 @@ final_df
 c. Identify the name(s) of the film(s) which was/were rented for the highest dollar value. (Assume all costs are in USD regardless of country.) (Hint: You can merge a table more than once.)
 
 ```{r}
-sql_c <- gg("
-            ")
+sql_c <- gg("SELECT film_id,
+                         title,
+                         rental_rate 
+                  FROM film")
+max_rental_rate <- max(sql_c$rental_rate)
+top_rent_film <- sql_c[sql_c$rental_rate == max_rental_rate, ]
 
+top_rent_film
 ```
 
 
@@ -352,7 +357,7 @@ Single SQL querey:
 a.
 
 ```{r}
-single_a <- gg("
+single_a <- gg("SELECT 
                ")
 
 ```
@@ -361,7 +366,7 @@ single_a <- gg("
 b.
 
 ```{r}
-single_b <- gg("
+single_b <- gg("SELECT 
                ")
 
 ```
@@ -370,7 +375,7 @@ single_b <- gg("
 c.
 
 ```{r}
-single_c <- gg("
+single_c <- gg("SELECT
                ")
 
 ```
@@ -382,7 +387,7 @@ Comparisons:
 ```{r}
 #microbenchmark for each of the different versions and questions
 #part a
-
+microbenchmark(sql_a, single_a)
 
 ```
 
@@ -390,7 +395,7 @@ Comparisons:
 
 ```{r}
 #part b
-
+microbenchmark(sql_b, single_b)
 
 ```
 
@@ -398,7 +403,7 @@ Comparisons:
 
 ```{r}
 #part c
-
+microbenchmark(sql_c, single_c)
 
 ```
 
