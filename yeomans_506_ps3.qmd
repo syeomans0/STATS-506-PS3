@@ -368,7 +368,7 @@ inventory_film <- merge(rental_inventory, sql_c_film, by = "film_id")
 
 max_amount <- max(inventory_film$amount, na.rm = TRUE)
 top_rentals <- inventory_film[inventory_film$amount == max_amount, ]
-unique(top_rentals[, c("film_id", "title", "amount")])
+top_rentals[, c("film_id", "title", "amount")]
 ```
 
 
@@ -385,7 +385,7 @@ single_a <- gg("SELECT store_id,
                 GROUP BY store_id")
 single_a
 ```
-Site used <https://www.w3schools.com/sql/sql_count_avg_sum.asp>. 
+Since this was a single query I wondered how to add in sums to SQL and used this site as a guide how to use the key words SUM and COUNT <https://www.w3schools.com/sql/sql_count_avg_sum.asp>. 
 
 b.
 
@@ -419,34 +419,162 @@ single_c <- gg("SELECT p.rental_id,
                 ORDER BY f.title")
 single_c
 ```
-This does not match my answer for c from the SQL and base R? This one has Scorpion Apollo showing up twice. 
+Why is scorpion showing up twice? Two different copies of the movie?
 
 
-Comparisons:
+Comparisons: have to make them functions in order to compare them. 
 
 ```{r}
 #microbenchmark for each of the different versions and questions
 #part a
+sql_r_a <- function() {
+  sql_a <- gg("SELECT store_id, 
+                    customer_id, 
+                    active
+            FROM customer")
 
+  stores <- unique(sql_a$store_id) #only two unique stores?
+
+  sql_a$active <- as.numeric(sql_a$active)
+
+  table(sql_a$store_id)
+  table(sql_a$active)
+
+  store1_total <- 0
+  store1_active <- 0
+  store2_total <- 0
+  store2_active <- 0
+
+
+  for (i in 1:nrow(sql_a)) {
+    if (sql_a$store_id[i] == 1) {
+      store1_total <- store1_total + 1
+      if (sql_a$active[i] == 1) {
+        store1_active <- store1_active + 1
+      }
+    }
+  
+    if (sql_a$store_id[i] == 2) {
+      store2_total <- store2_total + 1
+      if (sql_a$active[i] == 1) {
+        store2_active <- store2_active + 1
+      }
+    }
+  }
+
+  store1_percent <- 100 * (store1_active / store1_total)
+  store2_percent <- 100 * (store2_active / store2_total)
+}
+
+pure_sql_a <- function() {
+  gg("SELECT store_id, 
+                       COUNT(customer_id) as total_cust,
+                       SUM(active) as active_cust,
+                       100 * SUM(active) / COUNT(customer_id) as percent_active
+                FROM customer
+                GROUP BY store_id")
+}
+
+
+microbenchmark(sql_r_a, pure_sql_a)
 
 ```
-
+From this, it can be seen that, surprisingly, the SQL plus R is faster than the single query for part a. This can be seen looking at the means and seeing SQL plus R has a smaller average run time of 76 nanoseconds compared to 117 for the single query. 
 
 
 ```{r}
 #part b
+sql_r_b <- function() {
+  sql_b_staff <- gg("SELECT staff_id,
+                          first_name,
+                          last_name,
+                          address_id
+                   FROM staff")
 
+  sql_b_address <- gg("SELECT address_id,
+                            city_id
+                     FROM address")
+  sql_b_city <- gg("SELECT city_id, 
+                         country_id 
+                  FROM city")
+  
+  sql_b_country <- gg("SELECT country_id, 
+                            country 
+                     FROM country")
+
+  staff_address <- merge(sql_b_staff, sql_b_address, by = "address_id")
+  address_city <- merge(staff_address, sql_b_city, by = "city_id")
+  city_country <- merge(address_city, sql_b_country, by = "country_id")
+  city_country$staff_name <- paste(city_country$first_name, city_country$last_name)
+  final_df <- city_country[, c("staff_id", "staff_name", "country")]
+}
+
+pure_sql_b <- function() {
+  gg("SELECT s.staff_id,
+                       s.first_name AS first_name, 
+                       s.last_name AS last_name,
+                       c.country
+                FROM staff AS s
+                      INNER JOIN address AS a ON s.address_id = a.address_id
+                      INNER JOIN city AS ci ON a.city_id = ci.city_id
+                      INNER JOIN country AS c ON ci.country_id = c.country_id")
+}
+
+
+microbenchmark(sql_r_b, pure_sql_b)
 
 ```
-
+From this we can see that the single query is faster than that on the SQL plus base R for part b. This comes from the fact that the mean run time is shorter than the SQL plus R with a average time of 83 nanoseconds, and this one also has a smaller max run time.
 
 
 ```{r}
 #part c
+sql_r_c <- function(){
+  sql_c_payment <- gg("SELECT rental_id, 
+                            amount 
+                     FROM payment")
+  sql_c_rental <- gg("SELECT rental_id, 
+                           inventory_id 
+                    FROM rental")
+  sql_c_inventory <- gg("SELECT inventory_id, 
+                              film_id 
+                       FROM inventory")
+  sql_c_film <- gg("SELECT film_id, 
+                         title 
+                  FROM film")
 
+  payment_rental <- merge(sql_c_payment, sql_c_rental, by = "rental_id")
+
+  rental_inventory <- merge(payment_rental, sql_c_inventory, by = "inventory_id")
+
+  inventory_film <- merge(rental_inventory, sql_c_film, by = "film_id")
+
+
+  max_amount <- max(inventory_film$amount, na.rm = TRUE)
+  top_rentals <- inventory_film[inventory_film$amount == max_amount, ]
+  top_rentals[, c("film_id", "title", "amount")]
+}
+  
+  
+pure_sql_c <- function() {
+  gg("SELECT p.rental_id,
+                      r.inventory_id,
+                      i.film_id,
+                      f.title,
+                      p.amount
+                FROM payment AS p
+                  INNER JOIN rental AS r ON p.rental_id = r.rental_id
+                  INNER JOIN inventory AS i ON r.inventory_id = i.inventory_id
+                  INNER JOIN film AS f ON i.film_id = f.film_id
+                WHERE p.amount = (SELECT MAX(amount) FROM payment)
+                ORDER BY f.title")
+}
+
+
+microbenchmark(sql_r_c, pure_sql_c)
 
 ```
-
+From this, we can see that the single query is faster in this case with a mean of 70 nanoseconds, and the fact it has a smaller max than that of the SQL plus base R version for part c.
 
 
 
